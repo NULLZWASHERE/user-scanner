@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Envy • Scanner</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap');
+
+    :root {
+      --primary: #00ffcc;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: linear-gradient(145deg, #0a0a0f, #1a1a2e, #16213e);
+      color: #ddd;
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 40px auto;
+      background: rgba(15, 15, 35, 0.92);
+      border-radius: 28px;
+      overflow: hidden;
+      box-shadow: 0 30px 80px rgba(0, 0, 0, 0.8);
+      border: 1px solid rgba(0, 255, 204, 0.15);
+    }
+
+    header {
+      text-align: center;
+      padding: 50px 20px 30px;
+      background: linear-gradient(135deg, rgba(0,255,204,0.1), transparent);
+    }
+
+    h1 {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 3.8rem;
+      font-weight: 700;
+      margin: 0;
+      background: linear-gradient(90deg, #00ffcc, #00aaff);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .tagline {
+      color: #aaa;
+      font-size: 1.3rem;
+      margin-top: 8px;
+    }
+
+    .main {
+      padding: 0 40px 50px;
+    }
+
+    .search-box {
+      display: flex;
+      gap: 16px;
+      margin-bottom: 25px;
+    }
+
+    input {
+      flex: 1;
+      padding: 22px 24px;
+      font-size: 1.2rem;
+      background: #1c1c2b;
+      border: 2px solid #333366;
+      border-radius: 20px;
+      color: white;
+      outline: none;
+    }
+
+    input:focus {
+      border-color: var(--primary);
+    }
+
+    select {
+      padding: 22px 24px;
+      font-size: 1.1rem;
+      background: #1c1c2b;
+      border: 2px solid #333366;
+      border-radius: 20px;
+      color: white;
+    }
+
+    button {
+      padding: 0 50px;
+      background: linear-gradient(90deg, #00ffcc, #00cc99);
+      color: #000;
+      font-weight: 700;
+      font-size: 1.2rem;
+      border: none;
+      border-radius: 20px;
+      cursor: pointer;
+      transition: all 0.4s;
+    }
+
+    button:hover {
+      transform: translateY(-4px) scale(1.03);
+      box-shadow: 0 20px 40px rgba(0, 255, 204, 0.35);
+    }
+
+    .controls {
+      display: flex;
+      gap: 30px;
+      margin: 20px 0 35px;
+    }
+
+    label {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 1.1rem;
+      cursor: pointer;
+    }
+
+    .results {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+      gap: 20px;
+    }
+
+    .card {
+      background: #161625;
+      border-radius: 20px;
+      padding: 24px;
+      transition: all 0.3s ease;
+      border: 1px solid #2a2a40;
+    }
+
+    .card:hover {
+      border-color: var(--primary);
+      transform: translateY(-10px);
+      box-shadow: 0 25px 50px rgba(0, 255, 204, 0.15);
+    }
+
+    .platform {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+
+    .platform-icon {
+      font-size: 2.8rem;
+      width: 65px;
+      height: 65px;
+      background: #25253a;
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .status-found {
+      color: #00ff99;
+      font-weight: 600;
+      font-size: 1.05rem;
+    }
+
+    .status-bar {
+      text-align: center;
+      padding: 18px;
+      background: rgba(0, 255, 140, 0.1);
+      border-radius: 16px;
+      margin: 25px 0;
+      font-size: 1.2rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Envy</h1>
+      <p class="tagline">Advanced OSINT Intelligence</p>
+    </header>
+
+    <div class="main">
+      <div class="search-box">
+        <input type="text" id="target" placeholder="Enter username or email..." value="freeemailosint">
+        <select id="type">
+          <option value="username">Username</option>
+          <option value="email">Email</option>
+        </select>
+      </div>
+
+      <div class="controls">
+        <label><input type="checkbox" id="only_found" checked> Show only found accounts</label>
+      </div>
+
+      <button onclick="scan()">Start Scan</button>
+
+      <div id="status" class="status-bar"></div>
+      <div id="result" class="results"></div>
+    </div>
+  </div>
+
+  <script>
+    const BASE_URL = "https://envy.zekoro.fun/api";
+
+    async function scan() {
+      const target = document.getElementById("target").value.trim();
+      if (!target) return alert("Please enter a target!");
+
+      const type = document.getElementById("type").value;
+      const onlyFound = document.getElementById("only_found").checked;
+
+      const url = `${BASE_URL}/scan?type=${type}&target=${encodeURIComponent(target)}&only_found=${onlyFound}`;
+
+      document.getElementById("status").innerHTML = `Scanning <b>${target}</b>... Please wait.`;
+      document.getElementById("result").innerHTML = "";
+
+      try {
+        const res = await fetch(url);
+        const data = await res.json();
+
+        if (!res.ok) {
+          document.getElementById("status").innerHTML = `❌ ${data.error || "Scan failed"}`;
+          return;
+        }
+
+        document.getElementById("status").innerHTML = 
+          `✅ Found <strong>${data.count}</strong> results for <strong>${data.target}</strong>`;
+
+        const container = document.getElementById("result");
+        container.innerHTML = "";
+
+        if (data.results.length === 0) {
+          container.innerHTML = `<p style="text-align:center; padding:80px; color:#666; grid-column:1/-1;">No accounts found.</p>`;
+          return;
+        }
+
+        data.results.forEach(item => {
+          const card = document.createElement('div');
+          card.className = 'card';
+          card.innerHTML = `
+            <div class="platform">
+              <div class="platform-icon">🔍</div>
+              <div>
+                <h3 style="margin:0">${item.site || item.name || 'Platform'}</h3>
+                <small style="color:#777">${item.url ? 'Profile Detected' : ''}</small>
+              </div>
+            </div>
+            <p class="status-found">${item.found ? '✅ Account Found' : 'Not Found'}</p>
+            ${item.url ? `<a href="${item.url}" target="_blank" style="color:var(--primary); margin-top:10px; display:inline-block;">View Profile →</a>` : ''}
+          `;
+          container.appendChild(card);
+        });
+      } catch (e) {
+        document.getElementById("status").innerHTML = "❌ Connection error. Please try again.";
+      }
+    }
+
+    document.getElementById("target").addEventListener("keypress", e => {
+      if (e.key === "Enter") scan();
+    });
+  </script>
+</body>
+</html>
