@@ -2,10 +2,12 @@
   "version": 2,
   "builds": [
     { "src": "api/scan.py", "use": "@vercel/python" },
-    { "src": "api/modules.py", "use": "@vercel/python" }
+    { "src": "api/modules.py", "use": "@vercel/python" },
+    { "src": "index.html", "use": "@vercel/static" }
   ],
   "routes": [
     { "src": "/api/scan", "dest": "/api/scan.py" },
-    { "src": "/api/modules", "dest": "/api/modules.py" }
+    { "src": "/api/modules", "dest": "/api/modules.py" },
+    { "src": "/", "dest": "/index.html" }
   ]
 }
