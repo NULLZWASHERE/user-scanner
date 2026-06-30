@@ -5,7 +5,7 @@ from user_scanner.core.orchestrator import generic_validate
 from user_scanner.core.result import Result
 
 def validate_microsoft_email(email: str) -> Result:
-    """Microsoft / Outlook / Live Email Checker"""
+    """Improved Microsoft / Outlook Email Checker"""
     if not re.match(r"[^@]+@[^@]+\.[^@]+", email):
         return Result.error("Invalid email format")
 
@@ -21,7 +21,6 @@ def validate_microsoft_email(email: str) -> Result:
 
     url = "https://login.microsoftonline.com/common/GetCredentialType?mkt=en-US"
 
-    # Body payload
     payload = {
         "username": email,
         "isOtherIdpSupported": True,
@@ -44,21 +43,23 @@ def validate_microsoft_email(email: str) -> Result:
         try:
             data = response.json()
             
-            # Main check
-            if data.get("IfExistsResult") == 1:
-                return Result.taken()   # Account exists
-            elif data.get("IfExistsResult") == 0:
-                return Result.available()
+            if_exists = data.get("IfExistsResult")
 
-            # Fallback
-            if "HasPassword" in str(data) or data.get("Credentials", {}).get("HasPassword"):
+            if if_exists == 1:
+                return Result.taken()      # Real account
+            elif if_exists == 0:
+                return Result.available()  # Does not exist
+
+            # Extra safety check
+            if data.get("Credentials", {}).get("HasPassword") is True:
                 return Result.taken()
 
             return Result.available()
 
-        except:
+        except Exception as e:
+            # Fallback
             text = response.text.lower()
-            if '"ifexistsresult":1' in text or "haspassword" in text:
+            if '"ifexistsresult":1' in text or '"haspassword":true' in text:
                 return Result.taken()
             return Result.available()
 
