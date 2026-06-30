@@ -7,7 +7,6 @@ from http.server import BaseHTTPRequestHandler
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from api._scanner import get_scan_results
 
-
 class handler(BaseHTTPRequestHandler):
     def do_GET(self):
         parsed = urlparse(self.path)
@@ -24,7 +23,6 @@ class handler(BaseHTTPRequestHandler):
 
         if not target:
             return self._json({"error": "Missing required parameter: target"}, 400)
-
         if scan_type not in ("username", "email"):
             return self._json({"error": "Parameter 'type' must be 'username' or 'email'"}, 400)
 
@@ -36,6 +34,7 @@ class handler(BaseHTTPRequestHandler):
                 module=get("module"),
                 only_found=get_bool("only_found"),
                 no_nsfw=get_bool("no_nsfw"),
+                hudson=get_bool("hudson"),          # ← New
             )
             self._json({
                 "target": target,
